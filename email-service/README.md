@@ -33,11 +33,6 @@ PORT=3000
 node index.js
 ```
 
-4. Install Python requirements:
-
-```
-pip install -r requirements.txt
-```
 
 
 
