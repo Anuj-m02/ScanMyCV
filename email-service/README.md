@@ -30,7 +30,7 @@ PORT=3000
 3. Start the email service:
 
 ```
-npm start
+node index.js
 ```
 
 4. Install Python requirements:
@@ -39,12 +39,7 @@ npm start
 pip install -r requirements.txt
 ```
 
-## Usage
 
-The email service provides two endpoints:
-
-1. `/send-email` - Sends an email to a single candidate
-2. `/send-emails` - Sends emails to multiple candidates
 
 The service is automatically used by the Flask application when you:
 
@@ -55,7 +50,7 @@ The service is automatically used by the Flask application when you:
 
 If emails are not being sent:
 
-1. Check if the email service is running (`npm start` in the email-service directory)
+1. Check if the email service is running (`node index.js` in the email-service directory)
 2. Verify your email credentials in the `.env` file
 3. Make sure you're using an app password for Gmail
 4. Check the console logs for any error messages
