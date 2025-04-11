@@ -24,11 +24,10 @@ This application is a Flask-based resume analyzer that matches uploaded resumes 
    python app.py
    ```
 
-3. Access the application at http://localhost:5000
 
 ## How to Use
 
-1. Open the application in your browser (http://localhost:5000)
+1. Open the application in your browser 
 2. Upload a PDF resume file by dragging and dropping or clicking the upload area
 3. Click the "Upload & Analyze" button
 4. View the analysis results on the results page
@@ -53,37 +52,6 @@ This application is a Flask-based resume analyzer that matches uploaded resumes 
 - `GET /results` - Get HTML page with analysis results
 - `GET /api/results` - Get JSON data of analysis results
 
-## Deployment
-
-### Render.com (Free)
-
-1. Create a [Render.com](https://render.com) account
-2. Connect your GitHub repository
-3. Create a new Web Service, point to your repository
-4. Render will automatically detect the `render.yaml` configuration
-5. Deploy with the following settings (or they'll be set automatically):
-   - Environment: Python
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn app:app`
-
-### Railway.app (Free Tier)
-
-1. Create a [Railway.app](https://railway.app) account
-2. Connect your GitHub repository
-3. Create a new project from the repository
-4. Railway will detect the Python application
-5. Add the following environment variable: `PORT=8080`
-6. Deploy the application
-
-### PythonAnywhere (Free)
-
-1. Create a [PythonAnywhere](https://www.pythonanywhere.com) account
-2. Go to the Web tab and create a new web app
-3. Choose Manual Configuration and select Python 3.9
-4. In the Code section, clone your Git repository
-5. Set up a virtual environment and install requirements
-6. Configure the WSGI file to point to your Flask app
-7. Reload the web app
 
 ### Local Deployment
 
