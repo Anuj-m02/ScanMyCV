@@ -62,8 +62,3 @@ pip install -r requirements.txt
 gunicorn app:app
 ```
 
-Access at http://localhost:8000
-=======
-# ScanMyCV
-Resume Analyzer
->>>>>>> a1e92d6ed2d18ac8432966ab63219ceafb7b29db
