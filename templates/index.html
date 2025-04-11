@@ -1,0 +1,315 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Analyzer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col dark-mode">
+    <header class="bg-white shadow-sm py-4">
+      <div class="container mx-auto px-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-primary">Resume Analyzer</h1>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          aria-label="Toggle dark mode"
+        >
+          <i class="fas fa-moon text-gray-600"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-bold text-primary">Resume Analyzer</h1>
+          <p class="mt-2 text-gray-600">
+            Upload resumes to find the best matches for your job openings
+          </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %} {% if messages %}
+        <div class="mb-6">
+          {% for message in messages %}
+          <div
+            class="p-4 {% if '❌' in message %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded-lg"
+          >
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <div class="card mb-6">
+          <form
+            action="/upload"
+            method="post"
+            enctype="multipart/form-data"
+            id="uploadForm"
+          >
+            <div class="upload-zone" id="uploadZone">
+              <i class="fas fa-upload text-3xl text-gray-400 mb-3"></i>
+              <p class="text-lg font-medium text-gray-700">
+                Drag & drop resume files here
+              </p>
+              <p class="text-sm text-gray-500 mt-1">
+                or click to select files (PDF only)
+              </p>
+              <div class="flex items-center justify-center mt-4">
+                <i class="fas fa-file-alt text-gray-400 mr-2"></i>
+                <span class="text-sm text-gray-500">
+                  Upload resume files to analyze
+                </span>
+              </div>
+              <input
+                id="file-input"
+                type="file"
+                name="file"
+                accept=".pdf"
+                class="hidden"
+              />
+            </div>
+
+            <div
+              id="errorContainer"
+              class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg hidden"
+            ></div>
+
+            <div id="fileList" class="mt-6 hidden">
+              <h3 class="font-semibold mb-2">Selected Resume:</h3>
+              <ul class="space-y-2" id="selectedFiles">
+                <!-- Selected files will appear here -->
+              </ul>
+            </div>
+
+            <div class="flex justify-center mt-6">
+              <button
+                type="submit"
+                id="submitButton"
+                disabled
+                class="btn opacity-50 cursor-not-allowed"
+              >
+                <i class="fas fa-upload mr-2"></i>
+                Upload & Analyze
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-white py-6 shadow-inner">
+      <div class="container mx-auto px-4 text-center text-gray-500">
+        <p>Resume Analyzer &copy; 2024</p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Theme toggle functionality
+        const themeToggle = document.getElementById("theme-toggle");
+        const body = document.body;
+        const icon = themeToggle.querySelector("i");
+
+        // Check for saved theme preference or use default dark mode
+        const savedTheme = localStorage.getItem("theme") || "dark";
+
+        // Apply the saved theme
+        if (savedTheme === "light") {
+          body.classList.remove("dark-mode");
+          icon.classList.remove("fa-sun");
+          icon.classList.add("fa-moon");
+        } else {
+          body.classList.add("dark-mode");
+          icon.classList.remove("fa-moon");
+          icon.classList.add("fa-sun");
+        }
+
+        // Handle theme toggle
+        themeToggle.addEventListener("click", function () {
+          body.classList.toggle("dark-mode");
+
+          if (body.classList.contains("dark-mode")) {
+            localStorage.setItem("theme", "dark");
+            icon.classList.remove("fa-moon");
+            icon.classList.add("fa-sun");
+          } else {
+            localStorage.setItem("theme", "light");
+            icon.classList.remove("fa-sun");
+            icon.classList.add("fa-moon");
+          }
+        });
+
+        // Upload functionality
+        const uploadZone = document.getElementById("uploadZone");
+        const fileInput = document.getElementById("file-input");
+        const submitButton = document.getElementById("submitButton");
+        const fileList = document.getElementById("fileList");
+        const selectedFiles = document.getElementById("selectedFiles");
+        const errorContainer = document.getElementById("errorContainer");
+        let currentFile = null;
+
+        // Click on upload zone to trigger file input
+        uploadZone.addEventListener("click", function () {
+          fileInput.click();
+        });
+
+        // Handle drag and drop
+        uploadZone.addEventListener("dragover", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadZone.classList.add("border-primary");
+        });
+
+        uploadZone.addEventListener("dragleave", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadZone.classList.remove("border-primary");
+        });
+
+        uploadZone.addEventListener("drop", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadZone.classList.remove("border-primary");
+
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            handleFiles(files);
+          }
+        });
+
+        // Handle file selection
+        fileInput.addEventListener("change", function () {
+          if (fileInput.files.length > 0) {
+            handleFiles(fileInput.files);
+          }
+        });
+
+        function handleFiles(files) {
+          // Clear previous errors
+          errorContainer.classList.add("hidden");
+          errorContainer.textContent = "";
+
+          // Filter for PDF files only
+          const pdfFiles = Array.from(files).filter(
+            (file) =>
+              file.type === "application/pdf" ||
+              file.name.toLowerCase().endsWith(".pdf")
+          );
+
+          if (pdfFiles.length === 0) {
+            showError("Please upload PDF files only");
+            return;
+          }
+
+          // Take only the first file (backend expects a single file)
+          const file = pdfFiles[0];
+          currentFile = file;
+
+          // Update file input
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          fileInput.files = dataTransfer.files;
+
+          // Show file in list
+          displaySelectedFile(file);
+
+          // Enable submit button
+          submitButton.disabled = false;
+          submitButton.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+
+        function displaySelectedFile(file) {
+          // Clear previous file list
+          selectedFiles.innerHTML = "";
+
+          // Create list item for the file
+          const li = document.createElement("li");
+          li.className =
+            "flex items-center justify-between p-3 bg-gray-50 rounded-lg";
+
+          const fileInfoDiv = document.createElement("div");
+          fileInfoDiv.className = "flex items-center";
+
+          const fileIcon = document.createElement("i");
+          fileIcon.className = "fas fa-file-alt text-gray-500 mr-2";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "truncate max-w-xs";
+          nameSpan.textContent = file.name;
+
+          const sizeSpan = document.createElement("span");
+          sizeSpan.className = "ml-2 text-xs text-gray-500";
+          sizeSpan.textContent = `(${Math.round(file.size / 1024)} KB)`;
+
+          fileInfoDiv.appendChild(fileIcon);
+          fileInfoDiv.appendChild(nameSpan);
+          fileInfoDiv.appendChild(sizeSpan);
+
+          const removeButton = document.createElement("button");
+          removeButton.className = "text-red-500 hover:text-red-700";
+          removeButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+          removeButton.addEventListener("click", function () {
+            // Clear file selection
+            fileInput.value = "";
+            currentFile = null;
+
+            // Hide file list
+            fileList.classList.add("hidden");
+
+            // Disable submit button
+            submitButton.disabled = true;
+            submitButton.classList.add("opacity-50", "cursor-not-allowed");
+          });
+
+          li.appendChild(fileInfoDiv);
+          li.appendChild(removeButton);
+
+          selectedFiles.appendChild(li);
+
+          // Show file list
+          fileList.classList.remove("hidden");
+        }
+
+        function showError(message) {
+          errorContainer.textContent = message;
+          errorContainer.classList.remove("hidden");
+        }
+
+        // Form submission handling
+        document
+          .getElementById("uploadForm")
+          .addEventListener("submit", function (e) {
+            if (!currentFile) {
+              e.preventDefault();
+              showError("Please select a PDF resume to upload");
+              return;
+            }
+
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML =
+              '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+          });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Analysis Results</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col dark-mode">
+    <header class="bg-white shadow-sm py-4">
+      <div class="container mx-auto px-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-primary">Resume Analyzer</h1>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          aria-label="Toggle dark mode"
+        >
+          <i class="fas fa-moon text-gray-600"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-4">
+          <h1 class="text-3xl font-bold text-primary">Analysis Results</h1>
+          <p class="mt-2 text-gray-600">
+            View the best matches for each resume
+          </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %} {% if messages %}
+        <div class="mb-6">
+          {% for message in messages %}
+          <div
+            class="p-4 {% if '❌' in message %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded-lg"
+          >
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <div class="card mb-6">
+          <div class="flex flex-col sm:flex-row gap-4 justify-between">
+            <div class="relative flex-grow">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+              <input
+                type="text"
+                id="searchInput"
+                class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Search by name or job..."
+              />
+            </div>
+
+            <div class="flex items-center">
+              <i class="fas fa-filter text-gray-500 mr-2"></i>
+              <label class="text-sm mr-2">Min Score:</label>
+              <select
+                id="scoreFilter"
+                class="border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="0">All</option>
+                <option value="50">50% or above</option>
+                <option value="70">70% or above</option>
+                <option value="90">90% or above</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="resultsContainer"
+          class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {% for result in match_results %}
+          <div
+            class="result-card"
+            data-score="{{ result.match_score * 100 if result.match_score <= 1 else result.match_score }}"
+            data-name="{{ result.candidate_name|lower }}"
+            data-job="{{ result.job_title|lower }}"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="p-2 bg-primary-10 rounded-full">
+                  <i class="fas fa-user-tie text-xl text-primary"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold">
+                    {{ result.candidate_name }}
+                    <span class="text-xs text-gray-500 font-normal ml-1"
+                      >{{ result.candidate_id }}</span
+                    >
+                  </h3>
+                  <p class="text-gray-500 text-sm">
+                    {% if result.email and result.email.strip() %}
+                    <i class="fas fa-envelope mr-1"></i> {{ result.email }} {%
+                    else %} <i class="fas fa-envelope-open mr-1"></i> No email
+                    available {% endif %}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="flex items-center {{ 'text-green-600' if result.match_score+0.1 >= 0.75 or result.match_score+10 >= 75 else 'text-yellow-600' if result.match_score+0.1 >= 0.5 or result.match_score+10 >= 50 else 'text-red-600' }}"
+              >
+                <i class="fas fa-percentage mr-1"></i>
+                <span class="font-bold text-lg"
+                  >{{ (result.match_score * 100+10)|int if
+                  result.match_score+0.1 <= 1 else result.match_score|int
+                  }}</span
+                >
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-briefcase mr-2 text-gray-600"></i>
+                <span class="font-medium">Best Match:</span>
+                <span class="ml-2">{{ result.job_title }}</span>
+              </div>
+
+              {% if result.match_score+0.1 >= 0.75 or result.match_score+10 >=
+              75 %}
+              <div class="flex items-center mt-3">
+                <i class="fas fa-envelope mr-2 text-gray-600"></i>
+                <span class="font-medium">Email Status:</span>
+                <div class="ml-2 flex items-center">
+                  {% if result.email_sent %}
+                  <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                  <span class="text-green-600">Sent</span>
+                  {% else %}
+                  <i class="fas fa-times-circle text-gray-400 mr-1"></i>
+                  <span class="text-gray-500">Pending</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="mt-4">
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                {% set score = (result.match_score * 100+10)|int if
+                result.match_score+0.1 <= 1 else result.match_score|int %}
+                <div
+                  class="h-2 rounded-full {{ 'progress-bar-high' if score >= 75 else 'progress-bar-medium' if score >= 50 else 'progress-bar-low' }}"
+                  style="width: {{ score }}%"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Send Email Button -->
+            {% if result.match_score+0.1 >= 0.75 or result.match_score+10 >= 75
+            %} {% if result.email and result.email.strip() and not
+            result.email_sent %}
+            <div class="mt-4 text-center">
+              <form
+                action="/send-email/{{ result.candidate_id }}"
+                method="post"
+                class="inline-block"
+              >
+                <button
+                  type="submit"
+                  class="px-3 py-1 bg-primary-color text-white rounded text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <i class="fas fa-paper-plane mr-1"></i> Send Interview
+                  Invitation
+                </button>
+              </form>
+            </div>
+            {% endif %} {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <div
+          id="noResults"
+          class="hidden text-center py-12 bg-gray-50 rounded-lg border border-gray-200"
+        >
+          <p class="text-gray-500 text-lg">No results match your criteria</p>
+          <button id="clearFilters" class="mt-2 text-primary underline">
+            Clear filters
+          </button>
+        </div>
+
+        <div class="mt-8 text-center">
+          <a href="/" class="btn"> Upload More Resumes </a>
+
+          <!-- Send All Emails Button -->
+          <form
+            action="/send-all-emails"
+            method="post"
+            class="inline-block ml-4"
+          >
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-envelope mr-2"></i> Send All Emails to
+              Shortlisted Candidates
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-white py-6 shadow-inner">
+      <div class="container mx-auto px-4 text-center text-gray-500">
+        <p>Resume Analyzer &copy; 2024</p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Theme toggle functionality
+        const themeToggle = document.getElementById("theme-toggle");
+        const body = document.body;
+        const icon = themeToggle.querySelector("i");
+
+        // Check for saved theme preference or use default dark mode
+        const savedTheme = localStorage.getItem("theme") || "dark";
+
+        // Apply the saved theme
+        if (savedTheme === "light") {
+          body.classList.remove("dark-mode");
+          icon.classList.remove("fa-sun");
+          icon.classList.add("fa-moon");
+        } else {
+          body.classList.add("dark-mode");
+          icon.classList.remove("fa-moon");
+          icon.classList.add("fa-sun");
+        }
+
+        // Handle theme toggle
+        themeToggle.addEventListener("click", function () {
+          body.classList.toggle("dark-mode");
+
+          if (body.classList.contains("dark-mode")) {
+            localStorage.setItem("theme", "dark");
+            icon.classList.remove("fa-moon");
+            icon.classList.add("fa-sun");
+          } else {
+            localStorage.setItem("theme", "light");
+            icon.classList.remove("fa-sun");
+            icon.classList.add("fa-moon");
+          }
+        });
+
+        // Results filtering functionality
+        const searchInput = document.getElementById("searchInput");
+        const scoreFilter = document.getElementById("scoreFilter");
+        const resultsContainer = document.getElementById("resultsContainer");
+        const noResults = document.getElementById("noResults");
+        const clearFilters = document.getElementById("clearFilters");
+        const resultCards = document.querySelectorAll(".result-card");
+
+        // Function to filter results
+        function filterResults() {
+          const searchTerm = searchInput.value.toLowerCase();
+          const minScore = parseInt(scoreFilter.value);
+          let visibleCount = 0;
+
+          resultCards.forEach((card) => {
+            const score = parseFloat(card.dataset.score);
+            const name = card.dataset.name;
+            const job = card.dataset.job;
+
+            const matchesSearch =
+              searchTerm === "" ||
+              name.includes(searchTerm) ||
+              job.includes(searchTerm);
+            const matchesScore = score >= minScore;
+
+            if (matchesSearch && matchesScore) {
+              card.classList.remove("hidden");
+              visibleCount++;
+            } else {
+              card.classList.add("hidden");
+            }
+          });
+
+          // Show "no results" message if needed
+          if (visibleCount === 0) {
+            noResults.classList.remove("hidden");
+            resultsContainer.classList.add("hidden");
+          } else {
+            noResults.classList.add("hidden");
+            resultsContainer.classList.remove("hidden");
+          }
+        }
+
+        // Add event listeners
+        searchInput.addEventListener("input", filterResults);
+        scoreFilter.addEventListener("change", filterResults);
+
+        // Clear filters button
+        clearFilters.addEventListener("click", function () {
+          searchInput.value = "";
+          scoreFilter.value = "0";
+          filterResults();
+        });
+
+        // Initial filtering (if any stored values)
+        filterResults();
+      });
+    </script>
+  </body>
+</html>

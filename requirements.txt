@@ -1,0 +1,5 @@
+flask==2.3.3
+sentence-transformers==2.2.2
+PyMuPDF==1.23.5
+requests==2.31.0
+gunicorn==20.1.0
