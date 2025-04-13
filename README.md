@@ -24,6 +24,8 @@ This application is a Flask-based resume analyzer that matches uploaded resumes 
    python app.py
    ```
 
+![Screenshot 2025-04-11 191806](https://github.com/user-attachments/assets/e364bd6d-419a-40ee-8195-82620f7e0c66)
+![Screenshot 2025-04-11 191749](https://github.com/user-attachments/assets/2a19851a-ccd0-4227-8249-3492f503b28c)
 
 ## How to Use
 
